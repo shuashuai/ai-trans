@@ -59,11 +59,20 @@ export default function Home() {
     '文案中有部分内容是日期格式，例如 MMM D，翻译成MM 月 DD 日；MMM D, YYYY 翻译成 YYYY 年 MM 月 DD 日； 这些日期的表达式中其中 MMM 是月份，D 是日期，YYYY 是年份，翻译的时候根据目标语言的日期习惯翻译成对应的格式'
   ];
 
+  const resetStates = useCallback(() => {
+    setPreviewContent('');
+    setTranslationProgress(0);
+    setAccumulatedTranslations(new Map());
+    setCurrentBatchItems([]);
+    setCurrentBatchTranslations(new Map());
+  }, []);
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       setFile(acceptedFiles[0]);
+      resetStates();
     }
-  }, []);
+  }, [resetStates]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -352,7 +361,10 @@ export default function Home() {
             <select
               id="targetLanguage"
               value={targetLanguage}
-              onChange={(e) => setTargetLanguage(e.target.value)}
+              onChange={(e) => {
+                setTargetLanguage(e.target.value);
+                resetStates();
+              }}
               className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             >
               {languageOptions.map((option) => (
@@ -397,11 +409,8 @@ export default function Home() {
             )}
           </div>
           {isTranslating && (
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                style={{ width: `${translationProgress}%` }}
-              />
+            <div className="fixed bottom-4 right-4 bg-black bg-opacity-75 text-white px-4 py-2 rounded-lg z-50">
+              翻译进度：{Math.round(translationProgress)}%
             </div>
           )}
         </div>
@@ -414,8 +423,9 @@ export default function Home() {
             </div>
             <div className="flex justify-center">
               <button
-                className="px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white"
+                className={`px-6 py-2 rounded-lg ${!isTranslating && translationProgress === 100 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 cursor-not-allowed'} text-white`}
                 onClick={handleDownload}
+                disabled={isTranslating || translationProgress !== 100}
               >
                 下载翻译结果
               </button>

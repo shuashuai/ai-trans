@@ -24,6 +24,7 @@ export default function Home() {
   const [accumulatedTranslations, setAccumulatedTranslations] = useState<Map<string, string>>(new Map());
   const [currentBatchItems, setCurrentBatchItems] = useState<{ text: string; path: string[] }[]>([]);
   const [currentBatchTranslations, setCurrentBatchTranslations] = useState<Map<string, string>>(new Map());
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const languageOptions = [
     { label: 'Default', value: 'Default' },
@@ -87,6 +88,8 @@ export default function Home() {
     if (!file) return;
     setTranslationProgress(0);
     setIsTranslating(true);
+    const controller = new AbortController();
+    setAbortController(controller);
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
@@ -160,7 +163,8 @@ export default function Home() {
               targetLanguage,
               batchIndex,
               totalBatches: batches
-            })
+            }),
+            signal: controller.signal
           });
 
           const reader = response.body?.getReader();
@@ -286,7 +290,10 @@ export default function Home() {
   };
 
   const handleStopTranslation = () => {
-    // TODO: 实现停止翻译逻辑
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
     setIsTranslating(false);
   };
 
